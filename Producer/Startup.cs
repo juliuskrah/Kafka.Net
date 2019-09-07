@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Producer.Data;
+using Producer.Services;
 
 namespace Producer
 {
@@ -23,6 +24,7 @@ namespace Producer
             services.AddDbContext<TodoDbContext>(options =>
                 options.UseInMemoryDatabase(Configuration.GetConnectionString("TodoDatabase"))
             ); ;
+            services.AddSingleton<IProducer, KafkaProducer>();
             services.AddControllers();
         }
 

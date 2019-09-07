@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Producer.Data;
 using Producer.Models;
+using Producer.Services;
 
 namespace Producer.Controllers
 {
@@ -15,10 +16,12 @@ namespace Producer.Controllers
     public class TodoController : ControllerBase
     {
         private readonly TodoDbContext _context;
+        private readonly IProducer _producer;
 
-        public TodoController(TodoDbContext context)
+        public TodoController(TodoDbContext context, IProducer producer)
         {
             _context = context;
+            _producer = producer;
         }
 
         // GET: api/Todo
@@ -77,7 +80,9 @@ namespace Producer.Controllers
         public async Task<ActionResult<Todo>> PostTodo(Todo todo)
         {
             _context.Todos.Add(todo);
+            var dr = await _producer.Send(todo.Id.ToString(), todo.Item);
             await _context.SaveChangesAsync();
+            Console.WriteLine($"Delivered '{dr.Value}' to '{dr.TopicPartitionOffset}'");
 
             return CreatedAtAction("GetTodo", new { id = todo.Id }, todo);
         }

@@ -1,30 +1,27 @@
 ﻿using Confluent.Kafka;
-using System;
+using Microsoft.Extensions.Configuration;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace Producer.Services
 {
     public class KafkaProducer : IProducer
     {
-        public async Task<DeliveryResult<Null, string>> Send()
+        private IProducer<string, string> producer;
+
+        public KafkaProducer(IConfiguration configuration)
         {
-            var config = new ProducerConfig { BootstrapServers = "localhost:9092" };
-
-            using(var p = new ProducerBuilder<Null, string>(config).Build())
+            var config = new Dictionary<string, string>
             {
-                try
-                {
-                    var dr = await p.ProduceAsync("some-topic", new Message<Null, string> { Value = "Some value"});
-                    return dr;
-                } catch (ProduceException<Null, string> e)
-                {
-                    Console.WriteLine($"Delivery failed: {e.Error.Reason}");
-                }
+                { "bootstrap.servers", configuration.GetValue<string>("Kafka:BootstrapServers") }
+            };
 
-                return null;
-            }
+            producer = new ProducerBuilder<string, string>(config).Build();
+        }
+
+        public async Task<DeliveryResult<string, string>> Send(string key, string value)
+        {
+            return await producer.ProduceAsync("some-topic", new Message<string, string> { Key = key, Value = value });
         }
     }
 }
